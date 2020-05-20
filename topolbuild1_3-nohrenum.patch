@@ -1,0 +1,448 @@
+diff -crN topolbuild1_3/README_PATCH.txt topolbuild1_3mod/README_PATCH.txt
+*** topolbuild1_3/README_PATCH.txt	Thu Jan  1 09:00:00 1970
+--- topolbuild1_3mod/README_PATCH.txt	Thu Dec  4 19:38:44 2014
+***************
+*** 0 ****
+--- 1,26 ----
++ The patch add the following environment variables and options.
++ 
++ Environment variable,
++ 
++ TOPOLBUILD_DIR
++ 
++ to set the absolute path to a directory that contains
++ appropriate force field data (the same as one set with "-dir" option).
++ 
++ Optional flag,
++ 
++ -nohrenum
++ 
++ to stop hydrogen atom renumbering.
++ This is default if environment variable TOPOLBUILD_DIR was set.
++ 
++ Optional flag,
++ 
++ -noposresout
++ 
++ to stop position restraint related files write out.
++ This is default if environment variable TOPOLBUILD_DIR was set.
++ 
++ Makoto Yoneya, Dr.
++ AIST, Tsukuba
++ JAPAN
+diff -crN topolbuild1_3/src/initializations.c topolbuild1_3mod/src/initializations.c
+*** topolbuild1_3/src/initializations.c	Fri Jan  8 01:14:36 2010
+--- topolbuild1_3mod/src/initializations.c	Thu Dec  4 19:39:46 2014
+***************
+*** 36,41 ****
+--- 36,43 ----
+  int center_it = 0;
+  short charge_set = 0;
+  short no_oppose = 0;
++ short no_hrenum = 0;
++ short no_posresout = 0;
+  
+  char ambername[MAXCHAR];
+  char mycorr_name[MAXCHAR];
+diff -crN topolbuild1_3/src/molec_alloc.c topolbuild1_3mod/src/molec_alloc.c
+*** topolbuild1_3/src/molec_alloc.c	Thu Apr 16 05:47:23 2009
+--- topolbuild1_3mod/src/molec_alloc.c	Thu Dec  4 19:40:00 2014
+***************
+*** 18,23 ****
+--- 18,25 ----
+  
+  #define NULLCHAR 0
+  
++ extern short no_hrenum;
++ 
+  /* allocate force field storage for the molecule
+     parameters are:
+          num_atoms          number of atoms in the molecule
+***************
+*** 157,175 ****
+                      back_order[i] = count;
+                      j++;
+                      count++;
+  /* set attached H's next to parent */
+!                     if((bond_count[i] > 0) && (atom_atno[i] > 1)) {
+!                          for(nex = 0; nex < bond_count[i]; nex++) {
+!                               if(atom_mass[(connect[i][nex])] == 0.0)
+!                                    continue;
+!                               if(atom_atno[(connect[i][nex])] == 1) {
+!                                    atom_order[j] = connect[i][nex];
+!                                    back_order[(connect[i][nex])] = count;
+!                                    j++;
+!                                    count++;
+!                               }       /* end if(atom_atno[(connect[i][nex])] == 1) */
+!                          }            /* end for(nex = 0; nex < bond_count[i]; nex++) */
+!                     }                 /* end if((bond_count[i] > 0) && (atom_atno[i] > 1)) */
+                 }                      /* end for(i = 0; i < num_atoms; i++) */
+            }                           /* end while(j < num_atoms) */
+  
+--- 159,179 ----
+                      back_order[i] = count;
+                      j++;
+                      count++;
++                     if (!no_hrenum) {
+  /* set attached H's next to parent */
+!                          if((bond_count[i] > 0) && (atom_atno[i] > 1)) {
+!                               for(nex = 0; nex < bond_count[i]; nex++) {
+!                                    if(atom_mass[(connect[i][nex])] == 0.0)
+!                                         continue;
+!                                    if(atom_atno[(connect[i][nex])] == 1) {
+!                                         atom_order[j] = connect[i][nex];
+!                                         back_order[(connect[i][nex])] = count;
+!                                         j++;
+!                                         count++;
+!                                    }       /* end if(atom_atno[(connect[i][nex])] == 1) */
+!                               }            /* end for(nex = 0; nex < bond_count[i]; nex++) */
+!                          }                 /* end if((bond_count[i] > 0) && (atom_atno[i] > 1)) */
+!                     }                 /* end if(!no_hrenum) */
+                 }                      /* end for(i = 0; i < num_atoms; i++) */
+            }                           /* end while(j < num_atoms) */
+  
+***************
+*** 198,216 ****
+                      back_order[i] = count;
+                      j++;
+                      count++;
+  /* set attached H's next to parent */
+!                     if((bond_count[i] > 0) && (atom_atno[i] > 1)) {
+!                          for(nex = 0; nex < bond_count[i]; nex++) {
+!                               if(atom_mass[(connect[i][nex])] == 0.0)
+!                                    continue;
+!                               if(atom_atno[(connect[i][nex])] == 1) {
+!                                    atom_order[j] = connect[i][nex];
+!                                    back_order[(connect[i][nex])] = count;
+!                                    j++;
+!                                    count++;
+!                               }       /* end if(atom_atno[(connect[i][nex])] == 1) */
+!                          }            /* end for(nex = 0; nex < bond_count[i]; nex++) */
+!                     }                 /* end if((bond_count[i] > 0) && (atom_atno[i] > 1)) */
+                 }                      /* end if(k == atom_segno[i]) */
+            }                           /* end for(i = 0; i < num_atoms; i++) */
+       }                                /* while(j < num_atoms) */
+--- 202,222 ----
+                      back_order[i] = count;
+                      j++;
+                      count++;
++                     if (!no_hrenum) {
+  /* set attached H's next to parent */
+!                          if((bond_count[i] > 0) && (atom_atno[i] > 1)) {
+!                               for(nex = 0; nex < bond_count[i]; nex++) {
+!                                    if(atom_mass[(connect[i][nex])] == 0.0)
+!                                         continue;
+!                                    if(atom_atno[(connect[i][nex])] == 1) {
+!                                         atom_order[j] = connect[i][nex];
+!                                         back_order[(connect[i][nex])] = count;
+!                                         j++;
+!                                         count++;
+!                                    }       /* end if(atom_atno[(connect[i][nex])] == 1) */
+!                               }            /* end for(nex = 0; nex < bond_count[i]; nex++) */
+!                          }                 /* end if((bond_count[i] > 0) && (atom_atno[i] > 1)) */
+!                     }                 /* end if(!no_hrenum) */
+                 }                      /* end if(k == atom_segno[i]) */
+            }                           /* end for(i = 0; i < num_atoms; i++) */
+       }                                /* while(j < num_atoms) */
+diff -crN topolbuild1_3/src/topolbuild.c topolbuild1_3mod/src/topolbuild.c
+*** topolbuild1_3/src/topolbuild.c	Fri Mar  5 01:40:09 2010
+--- topolbuild1_3mod/src/topolbuild.c	Thu Dec  4 19:40:11 2014
+***************
+*** 77,83 ****
+  #define NULLCHAR 0
+  #define MAXATOM 2000
+  #define NUMFORCEFIELDS 6
+! #define NUMOPTS 17
+  
+  void usage(char *name);
+  void do_an_amber(char *ante_name, int use_amber, char *leap_name,
+--- 77,83 ----
+  #define NULLCHAR 0
+  #define MAXATOM 2000
+  #define NUMFORCEFIELDS 6
+! #define NUMOPTS 19
+  
+  void usage(char *name);
+  void do_an_amber(char *ante_name, int use_amber, char *leap_name,
+***************
+*** 89,94 ****
+--- 89,97 ----
+  void fourier_log(int i_count);
+  void table_log(int i_count);
+  
++ extern short no_hrenum;
++ extern short no_posresout;
++ 
+  extern int lstart_at;
+  extern int res_start_at;
+  extern int rstart_at;
+***************
+*** 102,108 ****
+  
+  extern char *use_define[6];
+  extern char *in_command;
+! char vers_no[] = { "version 1.3" };
+  
+  /* force field define lines for topology */
+  static char *amber_def[]  = { "_FF_AMBER", "_FF_AMBER" };
+--- 105,111 ----
+  
+  extern char *use_define[6];
+  extern char *in_command;
+! char vers_no[] = { "version 1.3 patched" };
+  
+  /* force field define lines for topology */
+  static char *amber_def[]  = { "_FF_AMBER", "_FF_AMBER" };
+***************
+*** 171,177 ****
+                                     "-dir", "-ff", "-r", "-meas",
+                                     "-rename", "-gro", "-last",
+                                     "-resnum", "-renumall",
+!                                    "-purge", "-move", "-charge" };
+  
+       if(argc < 2){
+            fprintf(stderr, "Need parameters to run.\n");
+--- 174,181 ----
+                                     "-dir", "-ff", "-r", "-meas",
+                                     "-rename", "-gro", "-last",
+                                     "-resnum", "-renumall",
+!                                    "-purge", "-move", "-charge",
+! 											  "-nohrenum", "-noposresout" };
+  
+       if(argc < 2){
+            fprintf(stderr, "Need parameters to run.\n");
+***************
+*** 181,186 ****
+--- 185,207 ----
+  
+       filename[0] = NULLCHAR;
+       ante_name[0] = NULLCHAR;
++      if (getenv("TOPOLBUILD_DIR") != NULL) {
++           if(strlen(getenv("TOPOLBUILD_DIR")) > (MAXCHAR - 40)) {
++                sprintf(mess,
++                  "Forcefield home directory name, %s, too long.\n",
++                        getenv("TOPOLBUILD_DIR"));
++                my_fatal(FARGS, mess);
++                exit(1);
++           }
++           strncpy(ante_name, getenv("TOPOLBUILD_DIR"), (MAXCHAR - 40));
++           ante_name[(MAXCHAR - 40)] = NULLCHAR;
++           no_hrenum = 1;           /* 1 to stop hydrogen atom renumbering */
++           no_posresout = 1;        /* 1 to stop posre related files write out */
++      }
++ 	  else {
++           no_hrenum = 0;
++           no_posresout = 0;
++ 	  }
+       amberff[0] = NULLCHAR;
+       tp_amber[0] = NULLCHAR;
+       residue[0] = NULLCHAR;
+***************
+*** 310,315 ****
+--- 331,344 ----
+                           charge_set = 1;
+                           break;
+  
++                case 18:                           /* -nohrenum */
++                          no_hrenum = 1;
++                          break;
++ 
++                case 19:                           /* -noposresout */
++                          no_posresout = 1;
++                          break;
++ 
+                 default:  sprintf(mess, "Unrecognized option %s\n",
+                                   argv[i]);
+                           my_fatal(FARGS, mess);
+***************
+*** 1027,1033 ****
+       printf("\t\t                  file stripped of the .mol2).  A revised .mol2\n");
+       printf("\t\t                  file will be output to common nameMOL.mol2 as well.\n");
+       printf("\t\t-dir              Absolute path to a directory that contains\n");
+!      printf("\t\t                  appropriate force field data.\n");
+       printf("\t\t                  For amber type force fields, including glycam,\n");
+       printf("\t\t                  this would be a path to a directory that contains\n");
+       printf("\t\t                  directories ./dat/antechamber and ./dat/leap/parm\n");
+--- 1056,1064 ----
+       printf("\t\t                  file stripped of the .mol2).  A revised .mol2\n");
+       printf("\t\t                  file will be output to common nameMOL.mol2 as well.\n");
+       printf("\t\t-dir              Absolute path to a directory that contains\n");
+!      printf("\t\t                  appropriate force field data\n");
+!      printf("\t\t                  (also possible to assign with \n");
+!      printf("\t\t                  TOPOLBUILD_DIR environment variable).\n");
+       printf("\t\t                  For amber type force fields, including glycam,\n");
+       printf("\t\t                  this would be a path to a directory that contains\n");
+       printf("\t\t                  directories ./dat/antechamber and ./dat/leap/parm\n");
+***************
+*** 1088,1093 ****
+--- 1119,1128 ----
+       printf("\t\t-charge           Optional flag to assign charges from the force field\n");
+       printf("\t\t                  atom types to replace the .mol2 charges.  Currently\n");
+       printf("\t\t                  only works with oplsaa.\n\n");
++      printf("\t\t-nohrenum         Optional flag to stop hydrogen atom renumbering.\n");
++      printf("\t\t                  This is default if environment variable TOPOLBUILD_DIR was set.\n\n");
++      printf("\t\t-noposresout      Optional flag to stop position restraint related files write out.\n");
++      printf("\t\t                  This is default if environment variable TOPOLBUILD_DIR was set.\n\n");
+       printf("\t\t-h                Prints program version information and this usage\n");
+       printf("\t\t                  message.\n");
+       printf("\t\t-H                Same as -h.\n");
+***************
+*** 1106,1112 ****
+       printf("\t\t\tWritten by Bruce D. Ray, Ph.D.\n");
+       printf("\t\t\tIUPUI Physics Department\n");
+       printf("\t\t\t402 N. Blackford St.\n");
+!      printf("\t\t\tIndianapolis, Indiana  46202\n\t\t\tUSA\n\n");
+       return;
+  }
+  
+--- 1141,1149 ----
+       printf("\t\t\tWritten by Bruce D. Ray, Ph.D.\n");
+       printf("\t\t\tIUPUI Physics Department\n");
+       printf("\t\t\t402 N. Blackford St.\n");
+!      printf("\t\t\tIndianapolis, Indiana  46202\n\t\t\tUSA\n");
+!      printf("\t\t\tPatched by Makoto Yoneya, Ph.D.\n");
+!      printf("\t\t\tAIST, Tsukuba\n\t\t\tJAPAN\n");
+       return;
+  }
+  
+diff -crN topolbuild1_3/src/write_gro.c topolbuild1_3mod/src/write_gro.c
+*** topolbuild1_3/src/write_gro.c	Fri Feb 12 00:05:13 2010
+--- topolbuild1_3mod/src/write_gro.c	Fri Dec  5 23:27:33 2014
+***************
+*** 27,32 ****
+--- 27,34 ----
+  #define MAXCHAR 256
+  #define NULLCHAR 0
+  
++ extern short no_posresout;
++ 
+  extern int lstart_at;
+  extern int res_start_at;
+  extern int rstart_at;
+***************
+*** 212,218 ****
+                            amber, conv);
+       write_restraints(fptop, tot_rstr, names);
+  
+!      if(!res_start_at) {
+  /* write position restraints inclusion lines unless writing an addition */
+            strcpy(mess, "\"posre");
+            strcat(mess, filename);
+--- 214,220 ----
+                            amber, conv);
+       write_restraints(fptop, tot_rstr, names);
+  
+!      if(!res_start_at && !no_posresout) {
+  /* write position restraints inclusion lines unless writing an addition */
+            strcpy(mess, "\"posre");
+            strcat(mess, filename);
+***************
+*** 239,245 ****
+--- 241,249 ----
+  /* write ions inclusion lines unless writing an addition */
+            fprintf(fptop, "\n; Include generic topology for ions\n");
+            fprintf(fptop, "#include \"%s\"\n", use_define[3]);
++      }
+  
++      if(!res_start_at) {
+  /* write system information lines unless writing an addition */
+            fprintf(fptop, "\n [ system ]\n; title from mol2 input\n");
+            fprintf(fptop, "%s\n\n", mol_name);
+***************
+*** 306,315 ****
+            }
+  
+            if(atom_charge[(atom_order[i])] < 0.0)
+!                sum_neg += (int)(atom_charge[(atom_order[i])] * 1e5 - 0.5);
+            else
+!                sum_pos += (int)(atom_charge[(atom_order[i])] * 1e5 + 0.5);
+!           sigma_chg = ((double)(sum_pos + sum_neg))/1e5;
+            thistype[0] = NULLCHAR;
+            if((use_define[4] != NULL) &&
+               (isdigit(assigned_types[(atom_order[i])][0])))
+--- 310,319 ----
+            }
+  
+            if(atom_charge[(atom_order[i])] < 0.0)
+!                sum_neg += (int)(atom_charge[(atom_order[i])] * 1e6 - 0.5);
+            else
+!                sum_pos += (int)(atom_charge[(atom_order[i])] * 1e6 + 0.5);
+!           sigma_chg = ((double)(sum_pos + sum_neg))/1e6;
+            thistype[0] = NULLCHAR;
+            if((use_define[4] != NULL) &&
+               (isdigit(assigned_types[(atom_order[i])][0])))
+***************
+*** 323,329 ****
+            }
+  
+            strcat(thistype, assigned_types[(atom_order[i])]);
+!           fprintf(fptop, "%5d %11s %5d  %8s%8s%5d%10.5f%10.5f       ; %11.7f\n",
+                    (count + lstart2_at), thistype, (j + rstart_at), dummy,
+                    names[(atom_order[i])], cgnr_grp[(atom_order[i])],
+                    atom_charge[(atom_order[i])], atom_mass[(atom_order[i])],
+--- 327,333 ----
+            }
+  
+            strcat(thistype, assigned_types[(atom_order[i])]);
+!           fprintf(fptop, "%5d %11s %5d  %8s%8s%5d%11.6f%9.5f       ; %11.7f\n",
+                    (count + lstart2_at), thistype, (j + rstart_at), dummy,
+                    names[(atom_order[i])], cgnr_grp[(atom_order[i])],
+                    atom_charge[(atom_order[i])], atom_mass[(atom_order[i])],
+***************
+*** 331,337 ****
+            count++;
+       }
+  
+!      fprintf(fptop, "; total molecule charge = %11.7f\n", sigma_chg);
+  
+       return;
+  }
+--- 335,341 ----
+            count++;
+       }
+  
+! /*   fprintf(fptop, "; total molecule charge = %11.7f\n", sigma_chg); */
+  
+       return;
+  }
+***************
+*** 500,505 ****
+--- 504,510 ----
+  
+  /* pairs */
+       fprintf(fptop, "\n [ pairs ]\n");
++      fprintf(fptop, ";    ai  aj   funct\n");
+  
+       for(i = 0; i < numpairs; i++) {
+            if((back_order[(torsion_tab[i][0])] < 0) ||
+diff -crN topolbuild1_3/src/write_gro_top.c topolbuild1_3mod/src/write_gro_top.c
+*** topolbuild1_3/src/write_gro_top.c	Sat Aug  1 00:23:33 2009
+--- topolbuild1_3mod/src/write_gro_top.c	Thu Dec  4 19:56:46 2014
+***************
+*** 24,29 ****
+--- 24,31 ----
+  #define MAXCHAR 256
+  #define NULLCHAR 0
+  
++ extern short no_posresout;
++ 
+  extern char mess[MAXCHAR];
+  extern char *use_define[6];
+  extern char *in_command;
+***************
+*** 86,92 ****
+       fprintf(itp, ";nbfunc     comb-rule      gen-pairs     fudgeLJ      fudgeQQ\n");
+       fprintf(itp, "%s\n\n", use_define[5]);
+       fprintf(itp, "#include \"%s\"\n", file2);
+!      if(altnb == NULL) 
+            fprintf(itp, "#include \"ffusernb.itp\"\n");
+  
+       fclose(itp);
+--- 88,94 ----
+       fprintf(itp, ";nbfunc     comb-rule      gen-pairs     fudgeLJ      fudgeQQ\n");
+       fprintf(itp, "%s\n\n", use_define[5]);
+       fprintf(itp, "#include \"%s\"\n", file2);
+!      if(altnb == NULL && !no_posresout) 
+            fprintf(itp, "#include \"ffusernb.itp\"\n");
+  
+       fclose(itp);
