@@ -1,6 +1,6 @@
 # topolbuild-nohrenum
 
-Patch file for [topolbuild1_3][1].
+Patch file for [topolbuild][1] ver. 1.3.
 
 ## Functions
 
